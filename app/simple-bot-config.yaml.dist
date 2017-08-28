@@ -1,0 +1,30 @@
+# This is example config for Simple Bit (Simple strategy)
+# kuna.io api public key
+public_key: ""
+# kuna.io api secret key
+secret_key: ""
+
+# Trading pair configuration
+base_currency:
+    # If current value more than base currency account balance
+    # account balance will be divided to a margin (below) count
+    # result amount will be - order value
+    boundary: 0.05
+    # orders count and margin for each of them
+    margin: [0.0001, 0.001]
+quote_currency:
+    # If current value more than quote currency account balance
+    # account balance will be divided to a margin (below) count
+    # result amount will be - order value
+    boundary: 400
+    # orders count and margin for each of them
+    margin: [50, 200, 300]
+
+# Minimum amount for each currency to run tradings.
+# if currency account balance less than this value, orders is not created
+min_amounts:
+   btc: 0.001
+   uah: 10
+
+# debug info. Show bot memory usage
+show_memory_usage: true
