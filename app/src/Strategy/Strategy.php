@@ -34,7 +34,7 @@ abstract class Strategy
     /**
      * @return KunaClient
      */
-    protected function getClient(): KunaClient
+    public function getClient(): KunaClient
     {
         return $this->client;
     }

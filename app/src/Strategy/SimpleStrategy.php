@@ -19,10 +19,23 @@ class SimpleStrategy extends Strategy
      * @param string $pair
      * @return float
      */
-    public function getCurrentPrice(string $pair): float
+    public function getCurrentSellPrice(string $pair): float
+    {
+        $orders = $this->getClient()->shared()->asksOrderBook($pair, true);
+        /** @var Order $topOrder */
+        $topOrder = $orders[0];
+
+        return $topOrder->getPrice();
+    }
+
+    /**
+     * @param string $pair
+     * @return float
+     */
+    public function getCurrentBuyPrice(string $pair): float
     {
         /** @var Order $topOrder */
-        $topOrder = $this->getClient()->shared()->asksOrderBook($pair, true)[0];
+        $topOrder = $this->getClient()->shared()->bidsOrderBook($pair, true)[0];
 
         return $topOrder->getPrice();
     }

@@ -18,13 +18,16 @@ quote_currency:
     # result amount will be - order value
     boundary: 400
     # orders count and margin for each of them
-    margin: [50, 200, 300]
+    margin: [50, -50, -150]
 
 # Minimum amount for each currency to run tradings.
 # if currency account balance less than this value, orders is not created
 min_amounts:
    btc: 0.001
    uah: 10
+
+# Bot iteration timeout - seconds
+iteration_timeout: 30
 
 # debug info. Show bot memory usage
 show_memory_usage: true

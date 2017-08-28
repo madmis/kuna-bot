@@ -35,7 +35,8 @@ trait MinimumTradeAmount
             throw new StopBotException($e->getMessage(), $e->getCode(), $e);
         }
 
-        $this->info("<g>Available funds: {$account->getBalance()} {$currency}.</g>");
+        $balance = number_format($account->getBalance(), 8);
+        $this->info("<g>Available funds: {$balance} {$currency}.</g>");
 
         $minAmount = $this->getClient()->minTradeAmount($currency);
         if ($account->getBalance() < $minAmount) {

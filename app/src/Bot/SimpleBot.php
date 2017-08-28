@@ -54,6 +54,7 @@ class SimpleBot implements BotInterface
         $strategy = $this->createStrategy();
         [$base, $quote] = KunaClient::splitPair($this->pair);
         $memUsage = $this->config->get('show_memory_usage');
+        $timeout = (int)$this->config->get('iteration_timeout');
 
         while (true) {
             try {
@@ -62,11 +63,17 @@ class SimpleBot implements BotInterface
 
                 $this->processBaseFunds($strategy, $base);
 
-                if ($strategy->isBalanceAllowTrading($quote)) {
-                    $quoteConfig = $this->config->get('quote_currency');
+                $this->processQuoteFunds($strategy, $base, $quote);
+            } catch (BreakIterationException $e) {
+                $prev = $e->getPrevious();
+                if ($prev instanceof ClientException
+                    && $prev->hasResponse()
+                    && (int)$prev->getResponse()->getStatusCode() === 401) {
+                    $this->output->writeln("<r>Authentication error: {$e->getMessage()}</r>");
+                    $this->output->writeln('<r>Please check if the api keys are correct.</r>');
+                    break;
                 }
 
-            } catch (BreakIterationException $e) {
                 if ($e->getMessage()) {
                     $this->output->writeln("<r>{$e->getMessage()}</r>");
                 }
@@ -79,7 +86,7 @@ class SimpleBot implements BotInterface
                 break;
             } catch (\TypeError $e) {
                 $this->output->writeln("<r>Type Error exception: {$e->getMessage()}</r>");
-                sleep(30);
+                sleep($timeout);
             } catch (\Throwable $e) {
                 $this->output->writeln("<r>Unhandled exception: {$e->getMessage()}</r>");
                 VarDumper::dump(FlattenException::create($e)->toArray());
@@ -94,9 +101,62 @@ class SimpleBot implements BotInterface
                 }
             }
 
-            sleep(30);
+            sleep($timeout);
         }
     }
+
+    /**
+     * @param SimpleStrategy $strategy
+     * @param string $baseCurrency
+     * @param string $quoteCurrency
+     * @throws BreakIterationException
+     * @throws StopBotException
+     * @throws ClientException
+     */
+    protected function processQuoteFunds(SimpleStrategy $strategy, string $baseCurrency, string $quoteCurrency)
+    {
+        $this->output->writeln("<w>Check quote currency ({$quoteCurrency}) balance</w>");
+        if ($strategy->isBalanceAllowTrading($quoteCurrency)) {
+            /** @var ParameterBag $quoteConfig */
+            $quoteConfig = $this->config->get('quote_currency');
+
+            $this->output->writeln("<g>Quote funds ({$quoteCurrency}) processing</g>");
+            $this->output->writeln("\t<w>Boundary: {$quoteConfig->get('boundary')}</w>");
+            $this->output->writeln(sprintf(
+                "\t<w>Orders count: %s</w>",
+                count($quoteConfig->get('margin'))
+            ));
+            $this->output->writeln(sprintf(
+                "\t<w>Margin: %s</w>",
+                implode(', ', $quoteConfig->get('margin'))
+            ));
+
+            $orders = $strategy->createPreconfiguredOrders(
+                $quoteCurrency,
+                $strategy->getCurrentBuyPrice($this->pair),
+                $quoteConfig->get('boundary'),
+                $quoteConfig->get('margin')
+            );
+
+            $this->output->writeln("<g>Create {$baseCurrency} BUY orders</g>");
+            foreach ($orders as $key => $order) {
+                $order = $strategy
+                    ->getClient()
+                    ->signed()
+                    ->createBuyOrder($this->pair, $order['volume'], $order['price'], true);
+
+                $key++;
+                $this->output->writeln("\t<g>Oder #{$key}</g>");
+                $this->output->writeln("\t\t<w>Id: {$order->getId()}</w>");
+                $this->output->writeln("\t\t<w>Type: {$order->getOrdType()}</w>");
+                $this->output->writeln("\t\t<w>Price: {$order->getPrice()}</w>");
+                $this->output->writeln("\t\t<w>Side: {$order->getSide()}</w>");
+                $this->output->writeln("\t\t<w>State: {$order->getState()}</w>");
+                $this->output->writeln("\t\t<w>Volume: {$order->getVolume()}</w>");
+            }
+        }
+    }
+
 
     /**
      * @param SimpleStrategy $strategy
@@ -125,7 +185,7 @@ class SimpleBot implements BotInterface
 
             $orders = $strategy->createPreconfiguredOrders(
                 $baseCurrency,
-                $strategy->getCurrentPrice($this->pair),
+                $strategy->getCurrentSellPrice($this->pair),
                 $baseConfig->get('boundary'),
                 $baseConfig->get('margin')
             );
@@ -146,7 +206,6 @@ class SimpleBot implements BotInterface
                 $this->output->writeln("\t\t<w>State: {$order->getState()}</w>");
                 $this->output->writeln("\t\t<w>Volume: {$order->getVolume()}</w>");
             }
-
         }
     }
 
@@ -168,10 +227,14 @@ class SimpleBot implements BotInterface
 
     /**
      * @param string $config
+     * @throws \RuntimeException
      */
     protected function resolveConfiguration(string $config)
     {
         $config = Yaml::parse($config, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE);
+        if ($config === null) {
+            throw new \RuntimeException('Invalid bot configuration');
+        }
 
         $resolver = new OptionsResolver();
         $this->configureOptions($resolver);
@@ -200,6 +263,7 @@ class SimpleBot implements BotInterface
         $resolver->setDefaults([
             'min_amounts' => [],
             'show_memory_usage' => false,
+            'iteration_timeout' => 30,
         ]);
         $resolver
             ->setRequired([
@@ -226,7 +290,7 @@ class SimpleBot implements BotInterface
                 'boundary',
                 'margin',
             ])
-            ->setAllowedTypes('boundary', 'float')
+            ->setAllowedTypes('boundary', ['float', 'int'])
             ->setAllowedTypes('margin', 'array');
 
         $resolver->setAllowedValues('margin', function ($value) {

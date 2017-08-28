@@ -56,5 +56,6 @@
             "id": "01BRC7580P8YDSQR0013CX56RN",
             "allow-contrib": false
         }
-    }
+    },
+    "bin": ["bin/console"]
 }
