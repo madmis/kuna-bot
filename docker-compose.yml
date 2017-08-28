@@ -1,0 +1,19 @@
+version: "3"
+services:
+    php:
+        build: ./docker/dev/php
+        image: kunabot:app
+        expose:
+            - "9000"
+        volumes:
+            - ./app:/var/www
+        environment:
+            XDEBUG_CONFIG: "remote_host=172.29.175.8"
+            PHP_IDE_CONFIG: "serverName=kunabot"
+        tty: true
+        hostname: app
+        networks:
+            - kunabot_net
+
+networks:
+    kunabot_net:
