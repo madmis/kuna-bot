@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Class BotCommand
  * @package App\Command
  */
-class BotCommand extends ContainerAwareCommand
+class SimpleBotCommand extends ContainerAwareCommand
 {
     /**
      * @var InputInterface
