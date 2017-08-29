@@ -20,11 +20,17 @@ trait PreconfiguredOrders
      * @param float $orderPrice
      * @param float $boundary
      * @param array $margin
+     * @param bool $isBuyOrder
      * @return array [['volume' => ..., 'price' => ...], ...]
      * @throws BreakIterationException
      * @throws StopBotException
      */
-    public function createPreconfiguredOrders(string $currency, float $orderPrice, float $boundary, array $margin): array
+    public function createPreconfiguredOrders(
+        string $currency,
+        float $orderPrice,
+        float $boundary,
+        array $margin,
+        bool $isBuyOrder): array
     {
         try {
             $account = $this->getClient()->getCurrencyAccount($currency);
@@ -40,23 +46,23 @@ trait PreconfiguredOrders
         if ($account->getBalance() < $boundary) {
             $this->info('<y>Account balance less than boundary, so only 1 order can be opened</y>');
             // can create only one order
-            $margin = array_slice($margin, 1);
+            $margin = array_slice($margin, 0, 1);
         }
 
-        $this->info('<w>Calculate volume per 1 order</w>');
         $minAmount = $this->getClient()->minTradeAmount($currency);
         $volume = $account->getBalance() / count($margin);
         if ($volume < $minAmount) {
             $volume = $account->getBalance();
         }
-        $this->info("\t<w>Volume: {$volume}</w>");
-        $this->info("\t<w>Order price: {$orderPrice}</w>");
 
         $this->info('<w>Create orders configurations:</w>');
-
         $orders = [];
         foreach ($margin as $key => $orderMargin) {
             $price = bcadd($orderPrice, $orderMargin, 6);
+            if ($isBuyOrder) {
+                $volume = bcdiv($volume, $price, 6);
+            }
+
             $key++;
             $this->info("<w>Order #{$key}: volume|{$volume} price|{$price}</w>");
 

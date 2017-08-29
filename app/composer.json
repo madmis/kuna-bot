@@ -7,6 +7,7 @@
         "php": "^7.1.3",
         "doctrine/cache": "^1.8@dev",
         "madmis/kuna-api": "dev-master",
+        "monolog/monolog": "^2.0@dev",
         "symfony/console": "^4.0@dev",
         "symfony/dependency-injection": "^4.0@dev",
         "symfony/flex": "^1.0",

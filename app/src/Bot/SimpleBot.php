@@ -7,6 +7,9 @@ use App\Exception\StopBotException;
 use App\Service\KunaClient;
 use App\Strategy\SimpleStrategy;
 use madmis\ExchangeApi\Exception\ClientException;
+use Monolog\Logger;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
@@ -15,6 +18,10 @@ use Symfony\Component\VarDumper\VarDumper;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * Class SimpleBot
+ * @package App\Bot
+ */
 class SimpleBot implements BotInterface
 {
     /**
@@ -33,6 +40,11 @@ class SimpleBot implements BotInterface
     private $output;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @param OutputInterface $output
      * @param string $pair
      * @param string $config
@@ -44,6 +56,7 @@ class SimpleBot implements BotInterface
         $this->pair = $pair;
 
         $this->resolveConfiguration($config);
+        $this->logger = new NullLogger();
     }
 
     /**
@@ -65,15 +78,6 @@ class SimpleBot implements BotInterface
 
                 $this->processQuoteFunds($strategy, $base, $quote);
             } catch (BreakIterationException $e) {
-                $prev = $e->getPrevious();
-                if ($prev instanceof ClientException
-                    && $prev->hasResponse()
-                    && (int)$prev->getResponse()->getStatusCode() === 401) {
-                    $this->output->writeln("<r>Authentication error: {$e->getMessage()}</r>");
-                    $this->output->writeln('<r>Please check if the api keys are correct.</r>');
-                    break;
-                }
-
                 if ($e->getMessage()) {
                     $this->output->writeln("<r>{$e->getMessage()}</r>");
                 }
@@ -89,7 +93,9 @@ class SimpleBot implements BotInterface
                 sleep($timeout);
             } catch (\Throwable $e) {
                 $this->output->writeln("<r>Unhandled exception: {$e->getMessage()}</r>");
-                VarDumper::dump(FlattenException::create($e)->toArray());
+                $this->logger->log(Logger::ERROR, $e->getMessage(), [
+                    'exception' => $e->getTrace(),
+                ]);
             } finally {
                 if ($memUsage) {
                     $usage = memory_get_peak_usage(true) / 1024;
@@ -135,11 +141,14 @@ class SimpleBot implements BotInterface
                 $quoteCurrency,
                 $strategy->getCurrentBuyPrice($this->pair),
                 $quoteConfig->get('boundary'),
-                $quoteConfig->get('margin')
+                $quoteConfig->get('margin'),
+                true
             );
 
             $this->output->writeln("<g>Create {$baseCurrency} BUY orders</g>");
             foreach ($orders as $key => $order) {
+                $volume = (float)bcdiv($order['volume'], $order['price'], 6);
+
                 $order = $strategy
                     ->getClient()
                     ->signed()
@@ -187,7 +196,8 @@ class SimpleBot implements BotInterface
                 $baseCurrency,
                 $strategy->getCurrentSellPrice($this->pair),
                 $baseConfig->get('boundary'),
-                $baseConfig->get('margin')
+                $baseConfig->get('margin'),
+                false
             );
 
             $this->output->writeln("<g>Create {$baseCurrency} SELL orders</g>");
@@ -296,5 +306,16 @@ class SimpleBot implements BotInterface
         $resolver->setAllowedValues('margin', function ($value) {
             return count($value) > 0;
         });
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     * @return SimpleBot
+     */
+    public function setLogger(LoggerInterface $logger): SimpleBot
+    {
+        $this->logger = $logger;
+
+        return $this;
     }
 }

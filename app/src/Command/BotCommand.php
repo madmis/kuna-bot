@@ -3,6 +3,8 @@
 namespace App\Command;
 
 use App\Bot\SimpleBot;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputArgument;
@@ -55,7 +57,14 @@ EOF
         }
         $config = file_get_contents($configFile);
 
-        (new SimpleBot($output, $pair, $config))->run();
+        $logDir = $this->getContainer()->getParameter('kernel.logs_dir');
+        $loggerName = "simple-bot.{$pair}";
+        $logger = new Logger($loggerName);
+        $logger->pushHandler(new StreamHandler("$logDir/{$loggerName}.log", Logger::DEBUG));
+
+        (new SimpleBot($output, $pair, $config))
+            ->setLogger($logger)
+            ->run();
     }
 
     /**
