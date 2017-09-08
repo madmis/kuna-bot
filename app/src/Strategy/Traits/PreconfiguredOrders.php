@@ -58,15 +58,16 @@ trait PreconfiguredOrders
         $this->info('<w>Create orders configurations:</w>');
         $orders = [];
         foreach ($margin as $key => $orderMargin) {
+            $orderVolume = $volume;
             $price = bcadd($orderPrice, $orderMargin, 6);
             if ($isBuyOrder) {
-                $volume = bcdiv($volume, $price, 6);
+                $orderVolume = bcdiv($orderVolume, $price, 6);
             }
 
             $key++;
-            $this->info("<w>Order #{$key}: volume|{$volume} price|{$price}</w>");
+            $this->info("<w>Order #{$key}: volume|{$orderVolume} price|{$price}</w>");
 
-            $orders[] = ['volume' => $volume, 'price' => $price];
+            $orders[] = ['volume' => $orderVolume, 'price' => $price];
         }
 
         return $orders;

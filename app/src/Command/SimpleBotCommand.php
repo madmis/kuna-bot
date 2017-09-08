@@ -9,8 +9,9 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Yaml\Yaml;
+
 
 /**
  * Class BotCommand
@@ -26,15 +27,14 @@ class SimpleBotCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this->setName('simple-bot:run')
-            ->addArgument('pair', InputArgument::REQUIRED, 'Pair for trades')
-            ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Strategy configuration file')
+            ->addArgument('config', InputArgument::REQUIRED, 'Strategy configuration file')
             ->setDescription('Simple Kuna.io Bot')
             ->setHelp(
                 <<<'EOF'
 The <info>%command.name%</info> run bot:
 
 <comment>Run</comment>
-    <info>php %command.full_name% ethuah --margin=200 --buy-price-increase-unit=0.1 --show-memory-usage</info>
+    <info>php %command.full_name% /var/www/conf.btcuah.yaml</info>
 EOF
             );
     }
@@ -43,26 +43,40 @@ EOF
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return void
+     * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
+     * @throws \Symfony\Component\Yaml\Exception\ParseException
+     * @throws \Symfony\Component\DependencyInjection\Exception\InvalidArgumentException
+     * @throws \Exception
+     * @throws \RuntimeException
+     * @throws \LogicException
+     * @throws \InvalidArgumentException
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->setColors($output);
         $this->input = $input;
 
-        $pair = $input->getArgument('pair');
-
-        $configFile = $input->getOption('config');
+        $configFile = $input->getArgument('config');
         if (!is_file($configFile) && !file_exists($configFile)) {
             throw new \RuntimeException("Can't find configuration file");
         }
-        $config = file_get_contents($configFile);
+        $configSrc = file_get_contents($configFile);
+
+        $config = Yaml::parse($configSrc, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE);
+        if ($config === null) {
+            throw new \RuntimeException('Invalid bot configuration');
+        }
+        if (empty($config['pair'])) {
+            throw new \RuntimeException('Pair is not configured. Try to add pair to config file.');
+        }
+        $pair = $config['pair'];
 
         $logDir = $this->getContainer()->getParameter('kernel.logs_dir');
         $loggerName = "simple-bot.{$pair}";
         $logger = new Logger($loggerName);
         $logger->pushHandler(new StreamHandler("$logDir/{$loggerName}.log", Logger::DEBUG));
 
-        (new SimpleBot($output, $pair, $config))
+        (new SimpleBot($output, $pair, $configSrc))
             ->setLogger($logger)
             ->run();
     }

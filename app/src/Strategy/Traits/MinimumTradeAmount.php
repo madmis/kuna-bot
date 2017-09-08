@@ -18,7 +18,6 @@ trait MinimumTradeAmount
     /**
      * @param string $currency
      * @return bool
-     *
      * @throws BreakIterationException
      * @throws StopBotException
      */
@@ -40,7 +39,11 @@ trait MinimumTradeAmount
 
         $minAmount = $this->getClient()->minTradeAmount($currency);
         if ($account->getBalance() < $minAmount) {
-            $this->info("\t<y>Current balance less than minimum trading amount ({$minAmount})</y>");
+
+            $this->info(sprintf(
+                "\t<y>Current balance less than minimum trading amount (%s)</y>",
+                number_format($minAmount, 8)
+            ));
 
             return false;
         }

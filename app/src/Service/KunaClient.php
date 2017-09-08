@@ -19,6 +19,8 @@ class KunaClient extends KunaApi
     const PAIR_WAVESUAH = 'wavesuah';
     const PAIR_KUNBTC = 'kunbtc';
     const PAIR_BCHBTC = 'bchbtc';
+    const PAIR_GBGUAH = 'gbguah';
+    const PAIR_GBGGOL = 'gbggol';
 
     /**
      * @var array
@@ -31,6 +33,7 @@ class KunaClient extends KunaApi
         'eth' => 0.01,
         'waves' => 1,
         'bch' => 0.01,
+        'gbg' => 1,
     ];
 
     /**
@@ -54,7 +57,6 @@ class KunaClient extends KunaApi
 
     /**
      * @param string $currency
-     *
      * @return MyAccount
      * @throws ClientException
      * @throws \LogicException
@@ -77,7 +79,6 @@ class KunaClient extends KunaApi
 
     /**
      * @param string $pair
-     *
      * @return array
      */
     public static function splitPair(string $pair): array
@@ -91,9 +92,7 @@ class KunaClient extends KunaApi
 
     /**
      * Get minimal trade amount for currency
-     *
      * @param string $currency
-     *
      * @return float
      */
     public function minTradeAmount(string $currency): float

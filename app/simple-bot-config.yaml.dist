@@ -4,6 +4,9 @@ public_key: ""
 # kuna.io api secret key
 secret_key: ""
 
+# Trading pair
+pair: btcuah
+
 # Trading pair configuration
 base_currency:
     # If current value more than base currency account balance

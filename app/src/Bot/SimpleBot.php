@@ -13,7 +13,6 @@ use Psr\Log\NullLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -46,7 +45,8 @@ class SimpleBot implements BotInterface
      * @param OutputInterface $output
      * @param string $pair
      * @param string $config
-     * @throws ParseException
+     * @throws \Symfony\Component\Yaml\Exception\ParseException
+     * @throws \RuntimeException
      */
     public function __construct(OutputInterface $output, string $pair, string $config)
     {
@@ -59,6 +59,7 @@ class SimpleBot implements BotInterface
 
     /**
      * @return void
+     * @throws \Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException
      */
     public function run(): void
     {
@@ -86,6 +87,14 @@ class SimpleBot implements BotInterface
                     $this->output->writeln("<r>{$e->getMessage()}</r>");
                 }
                 break;
+            } catch (ClientException $e) {
+                $this->output->writeln("<r>{$e->getMessage()}</r>");
+                $context = ['exception' => $e->getTrace()];
+                if ($e->hasResponse()) {
+                    $context['response'] = (string)$e->getResponse()->getBody();
+                    $this->output->writeln("<r>{$context['response']}</r>");
+                }
+                $this->logger->log(Logger::ERROR, $e->getMessage(), $context);
             } catch (\TypeError $e) {
                 $this->output->writeln("<r>Type Error exception: {$e->getMessage()}</r>");
                 sleep($timeout);
@@ -103,6 +112,7 @@ class SimpleBot implements BotInterface
                         $usage / 1024
                     ));
                 }
+                sleep($timeout);
             }
 
             sleep($timeout);
@@ -277,11 +287,13 @@ class SimpleBot implements BotInterface
             ->setRequired([
                 'public_key',
                 'secret_key',
+                'pair',
                 'base_currency',
                 'quote_currency',
             ])
             ->setAllowedTypes('public_key', 'string')
             ->setAllowedTypes('secret_key', 'string')
+            ->setAllowedTypes('pair', 'string')
             ->setAllowedTypes('base_currency', 'array')
             ->setAllowedTypes('quote_currency', 'array')
             ->setAllowedTypes('min_amounts', 'array')
