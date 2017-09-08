@@ -21,7 +21,7 @@ and extract sources to a project (destination) folder **or** clone project
 
 Create configuration file:
 ```bash
-    $ cp ~/kuna-bot/app/simple-bot-config.yaml.dist ~/kuna-bot/app/sb-btcuah.yaml
+    $ cp ~/kuna-bot/app/simple-bot-config.yaml.dist ~/kuna-bot/app/conf.btcuah.yaml
 ```
 and change configuration parameters with your requirements.
 
@@ -43,7 +43,7 @@ Then do next steps:
 ```
 and run the bot:
 ```bash
-    $ php ~/kuna-bot/app/bin/console simple-bot:run btcuah -c ~/kuna-bot/app/sb-btcuah.yaml 
+    $ php ~/kuna-bot/app/bin/console simple-bot:run ~/kuna-bot/app/conf.btcuah.yaml 
 ```
 
 
@@ -60,5 +60,5 @@ Then do next steps:
 ```
 and run the bot:
 ```bash
-    $ php /var/www/bin/console simple-bot:run btcuah -c /var/www/sb-btcuah.yaml 
+    $ php /var/www/bin/console simple-bot:run /var/www/conf.btcuah.yaml 
 ```
