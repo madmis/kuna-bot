@@ -1,0 +1,29 @@
+# This is example config for Simple Bit (Simple strategy)
+# kuna.io api public key
+public_key: ""
+# kuna.io api secret key
+secret_key: ""
+
+# Trading pair
+pair: btcuah
+
+# Margin in quote currency
+# This is our profit when we sell base currency
+margin: 1000
+
+# Price increase unit when we place buy order
+# This unit will be added to current top price in the BUY glass
+# after that we will have our price
+increase_unit: 1
+
+# Minimum amount for each currency to run tradings.
+# if currency account balance less than this value, orders is not created
+min_amounts:
+   btc: 0.001
+   uah: 10
+
+# Bot iteration timeout - seconds
+iteration_timeout: 30
+
+# debug info. Show bot memory usage
+show_memory_usage: true

@@ -5,7 +5,9 @@ namespace App\Service;
 use madmis\ExchangeApi\Client\ClientInterface;
 use madmis\ExchangeApi\Exception\ClientException;
 use madmis\KunaApi\KunaApi;
+use madmis\KunaApi\Model\History;
 use madmis\KunaApi\Model\MyAccount;
+use madmis\KunaApi\Model\Order;
 
 /**
  * Class KunaClient
@@ -75,6 +77,55 @@ class KunaClient extends KunaApi
         }
 
         return reset($filtered);
+    }
+
+    /**
+     * @param string $pair
+     * @return Order[]|array
+     */
+    public function getActiveBuyOrders(string $pair): array
+    {
+        return array_filter(
+            $this->signed()->activeOrders($pair, true),
+            function (Order $order) {
+                return $order->getSide() === 'buy';
+            }
+        );
+    }
+
+    /**
+     * @param string $pair
+     * @return Order[]|array
+     */
+    public function getActiveSellOrders(string $pair): array
+    {
+        return array_filter(
+            $this->signed()->activeOrders($pair, true),
+            function (Order $order) {
+                return $order->getSide() === 'sell';
+            }
+        );
+    }
+
+    /**
+     * Get latest executed buy order
+     * @param string $pair
+     * @return \madmis\KunaApi\Model\History|null
+     */
+    public function getLatestBuyOrder(string $pair): ?History
+    {
+        /** @var \madmis\KunaApi\Model\History[] $history */
+        $history = $this->signed()->myHistory($pair, true);
+        /** @var \madmis\KunaApi\Model\History $latestBuy */
+        $latestBuy = null;
+        foreach ($history as $item) {
+            if ($item->getSide() === 'bid') {
+                $latestBuy = $item;
+                break;
+            }
+        }
+
+        return $latestBuy;
     }
 
     /**

@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\Bot\SimpleBot;
+use App\Bot\ShortingBot;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -12,36 +12,37 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Class BotCommand
+ * Class ShortingBotCommand
  * @package App\Command
  */
-class SimpleBotCommand extends ContainerAwareCommand
+class ShortingBotCommand extends ContainerAwareCommand
 {
     use ColorizedTrait;
 
     /**
-     * @var InputInterface
+     * @var \Symfony\Component\Console\Input\InputInterface
      */
     private $input;
 
     protected function configure()
     {
-        $this->setName('simple-bot:run')
+        $this->setName('shorting-bot:run')
             ->addArgument('config', InputArgument::REQUIRED, 'Strategy configuration file')
-            ->setDescription('Simple Kuna.io Bot')
+            ->setDescription('Kuna.io Bot - trade on the short distances')
             ->setHelp(
                 <<<'EOF'
 The <info>%command.name%</info> run bot:
 
 <comment>Run</comment>
-    <info>php %command.full_name% /var/www/conf.btcuah.yaml</info>
+    <info>php %command.full_name% /var/www/shorting.btcuah.yaml</info>
 EOF
             );
     }
 
+
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
+     * @param \Symfony\Component\Console\Input\InputInterface $input
+     * @param \Symfony\Component\Console\Output\OutputInterface $output
      * @return void
      * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
      * @throws \Symfony\Component\Yaml\Exception\ParseException
@@ -72,11 +73,11 @@ EOF
         $pair = $config['pair'];
 
         $logDir = $this->getContainer()->getParameter('kernel.logs_dir');
-        $loggerName = "simple-bot.{$pair}";
+        $loggerName = "shorting-bot.{$pair}";
         $logger = new Logger($loggerName);
         $logger->pushHandler(new StreamHandler("$logDir/{$loggerName}.log", Logger::DEBUG));
 
-        (new SimpleBot($output, $pair, $configSrc))
+        (new ShortingBot($output, $pair, $configSrc))
             ->setLogger($logger)
             ->run();
     }
