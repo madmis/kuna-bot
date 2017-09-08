@@ -62,3 +62,19 @@ and run the bot:
 ```bash
     $ php /var/www/bin/console simple-bot:run /var/www/conf.btcuah.yaml 
 ```
+
+### Concurrent Running
+**! Notice** Don't run more than one bot instance for one trading (exchange) account.
+
+You can run 2 (or more) bot instances from one application/container.
+For this create separate trading (exchange) accounts for different pairs.
+
+To run 2 bot instances:
+* Create 2 configuration files, for different pairs
+* Create different trading (exchange) accounts and generate API keys for it. 
+Then put this case to configuration files (each api key in the corresponding config file)
+* Run 2 bot instances (in separate terminal windows)
+```bash
+    $ php ~/kuna-bot/app/bin/console simple-bot:run ~/kuna-bot/app/conf.btcuah.yaml 
+    $ php ~/kuna-bot/app/bin/console simple-bot:run ~/kuna-bot/app/conf.ethuah.yaml 
+```
