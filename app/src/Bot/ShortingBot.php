@@ -224,15 +224,14 @@ class ShortingBot implements BotInterface
                 throw $ex;
             }
             $receive = bcmul($account->getBalance(), $price, self::SCALE);
-            $volume = (float)number_format($account->getBalance(), self::SCALE);
-            $this->output->writeln("\t<w>Sell volume: {$volume} {$base}</w>");
+            $this->output->writeln("\t<w>Sell volume: {$account->getBalance()} {$base}</w>");
             $this->output->writeln("\t<w>Will receive: {$receive} {$quote}</w>");
 
             $this->output->writeln("\t<g>Create {$base} SELL order</g>");
             $order = $strategy
                 ->getClient()
                 ->signed()
-                ->createSellOrder($this->pair, $volume, $price, true);
+                ->createSellOrder($this->pair, $account->getBalance(), $price, true);
 
             $this->output->writeln("\t\t<w>Id: {$order->getId()}</w>");
             $this->output->writeln("\t\t<w>Type: {$order->getOrdType()}</w>");
