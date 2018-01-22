@@ -3,6 +3,12 @@
 This is php bot with simple strategy to trade bitcoin 
 on the https://kuna.io/ exchange.
 
+**Warning!!!** Use this bot at your own risk. 
+Don't use this bot if you don't understand how it's working or you will lose your money.
+
+Please look into bot [source code](https://github.com/madmis/kuna-bot/blob/master/app/src/Bot/SimpleBot.php) to understand how it's working
+
+
 ## Table Of Contents
 
 - [Installation](#installation)
